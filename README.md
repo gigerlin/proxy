@@ -60,6 +60,17 @@ remote.getUserProfile(function(msg, err) {
     });
 ```
 
+### Browser ###
+
+The UMD bundle name of the minified library is *proxy*. The example below shows how to use a proxy client in the browser.
+
+Example:
+
+```js
+rpc = new proxy.Client('http://localhost:4241', 'dom1');
+...
+```
+
 ## License ##
 
 The MIT License (MIT)

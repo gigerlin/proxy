@@ -5,7 +5,7 @@
   },
   "name": "avs-proxy",
   "description": "Proxy for avs-rpc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "https://github.com/gigerlin/proxy",
   "contributors": [
     {
