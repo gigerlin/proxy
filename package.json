@@ -1,0 +1,32 @@
+{
+  "author": {
+    "name": "Gilles Gerlinger",
+    "email": "gilles.gerlinger@gmail.com"
+  },
+  "name": "avs-rpc",
+  "description": "Proxy for avs-rpc",
+  "version": "0.0.1",
+  "homepage": "https://github.com/gigerlin/proxy",
+  "contributors": [
+    {
+      "name": "Gilles Gerlinger",
+      "email": "gilles.gerlinger@gmail.com"
+    }
+  ],
+  "keywords": [
+    "RPC", "coffeescript", "remote", "proxy",
+  ],
+  "main": "./ioProxy.js",
+  "dependencies": {
+    "avs-rpc" : ">=0.1.12",
+    "socket.io" : ">=1.2.0",
+    "socket.io-client" : ">=1.2.0"
+  },
+  "devDependencies": {
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.6"
+  },
+  "readmeFilename": "README.md" 
+}
