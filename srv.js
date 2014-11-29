@@ -16,7 +16,7 @@
 
   })();
 
-  proxy = require('./ioProxy');
+  proxy = require('avs-proxy');
 
   server = new proxy.Server("http://localhost:" + process.argv[2], ['ns', 'truc'], function(domain, rpc) {
     var remote;

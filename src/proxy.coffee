@@ -9,7 +9,7 @@ class Proxy
   count: 0
   constructor: (@port) ->
     proxy = io @port
-    @log "Starting Proxy Server on #{@port}"
+    @log "Starting Proxy on #{@port}"
     @sockets = []
 
     proxy.on 'connection', (socket) =>

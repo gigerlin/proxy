@@ -1,4 +1,4 @@
-proxy = require './ioProxy'
+proxy = require 'avs-proxy'
 
 rpc = new proxy.Client "http://localhost:#{process.argv[2]}", 'ns'
 

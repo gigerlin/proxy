@@ -3,7 +3,7 @@ class User
   constructor: (@name, @age) ->
   getAge: -> @age
 
-proxy = require './ioProxy'
+proxy = require 'avs-proxy'
 
 server = new proxy.Server "http://localhost:#{process.argv[2]}", ['ns', 'truc'], (domain, rpc) ->
   rpc.implement new User 'gg', 32

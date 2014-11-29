@@ -17,7 +17,7 @@
       var proxy;
       this.port = port;
       proxy = io(this.port);
-      this.log("Starting Proxy Server on " + this.port);
+      this.log("Starting Proxy on " + this.port);
       this.sockets = [];
       proxy.on('connection', (function(_this) {
         return function(socket) {
