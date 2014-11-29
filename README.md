@@ -14,6 +14,12 @@ npm install avs-rpc
 npm install avs-proxy
 ```
 
+In browser:
+
+```html
+<script src=".../avs-proxy.min.js"></script>
+```
+
 ## Start proxy ##
 
 ```
