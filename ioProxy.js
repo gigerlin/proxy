@@ -6,106 +6,50 @@
  */
 
 (function() {
-  var Client, Server, ioProxy, io_client, rpc,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+  var Client, Server, avsRpc, io_client,
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   io_client = require('socket.io-client');
 
-  rpc = require('avs-rpc');
+  avsRpc = require('avs-rpc');
 
-  ioProxy = (function() {
-    function ioProxy(url, domains, type) {
-      this.url = url;
-      this.domains = domains;
-      this.socket = io_client(this.url);
-      this.log("Starting " + type + " for " + this.domains);
-      if (typeof this.domains === 'string') {
-        this.domains = [this.domains];
-      }
-      this.socket.on('handshake', (function(_this) {
-        return function(ready, ack_cb) {
-          _this.ready = ready;
-          return ack_cb({
-            type: type,
-            domains: _this.domains
+  exports.Server = Server = (function() {
+    function Server(url, service, cb) {
+      var socket;
+      socket = io_client("" + url + "/proxy");
+      socket.on('handshake', function(domains, ack_cb) {
+        var err;
+        console.log("proxy domains: " + domains);
+        if (__indexOf.call(domains, service) >= 0) {
+          console.log(err = "error: domain " + service + " already registered");
+          socket.disconnect();
+          return cb(null, err);
+        } else {
+          ack_cb({
+            domain: service
           });
-        };
-      })(this));
-    }
-
-    ioProxy.prototype.log = function(text) {
-      return console.log(text);
-    };
-
-    return ioProxy;
-
-  })();
-
-  exports.Server = Server = (function(_super) {
-    __extends(Server, _super);
-
-    function Server(url, domains, cb) {
-      var domain, _i, _len, _ref;
-      Server.__super__.constructor.call(this, url, domains, 'server');
-      _ref = this.domains;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        domain = _ref[_i];
-        this.socket.on("new." + domain, (function(_this) {
-          return function(id) {
-            if (cb) {
-              return cb(domain, new rpc.ioRpc(_this.socket, id));
-            }
-          };
-        })(this));
-      }
+          return socket.on('new', function(ID) {
+            return cb(new avsRpc.ioRpc(socket, ID));
+          });
+        }
+      });
     }
 
     return Server;
 
-  })(ioProxy);
+  })();
 
-  exports.Client = Client = (function(_super) {
-    __extends(Client, _super);
-
-    function Client(url, domains) {
-      var domain, _i, _len, _ref;
-      Client.__super__.constructor.call(this, url, domains, 'client');
-      this.rpc = [];
-      _ref = this.domains;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        domain = _ref[_i];
-        this.rpc[domain] = new rpc.ioRpc(this.socket, "rpc." + domain);
-      }
+  exports.Client = Client = (function() {
+    function Client(url, cb) {
+      var socket;
+      socket = io_client(url);
+      socket.on('connect', function() {
+        return cb(new avsRpc.ioRpc(socket));
+      });
     }
-
-    Client.prototype.remote = function() {
-      var domain, methods, _ref;
-      domain = arguments[0], methods = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      if (this.rpc[domain]) {
-        return (_ref = this.rpc[domain]).remote.apply(_ref, methods);
-      }
-    };
-
-    Client.prototype.implement = function() {
-      var domain, local, methods, _ref;
-      domain = arguments[0], local = arguments[1], methods = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-      if (this.rpc[domain]) {
-        return (_ref = this.rpc[domain]).implement.apply(_ref, [local].concat(__slice.call(methods)));
-      }
-    };
-
-    Client.prototype.implementAsync = function() {
-      var domain, local, methods, _ref;
-      domain = arguments[0], local = arguments[1], methods = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-      if (this.rpc[domain]) {
-        return (_ref = this.rpc[domain]).implementAsync.apply(_ref, [local].concat(__slice.call(methods)));
-      }
-    };
 
     return Client;
 
-  })(ioProxy);
+  })();
 
 }).call(this);

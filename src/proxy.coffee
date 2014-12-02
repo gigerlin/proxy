@@ -5,42 +5,27 @@
 
 io = require 'socket.io'
 
-class Proxy
-  count: 0
+exports.Proxy = class Proxy
   constructor: (@port) ->
+    @domains = []
     proxy = io @port
-    @log "Starting Proxy on #{@port}"
-    @sockets = []
-
-    proxy.on 'connection', (socket) =>
-      @log "NEW connection #{++@count}"
-
-      socket.on 'disconnect', (msg) =>
-        for domain of @sockets
-          if @sockets[domain] is socket
-            @log "removing domain #{domain}"
-            delete @sockets[domain]
-
-      domains = []; domains.push domain for domain of @sockets
-      socket.emit 'handshake', domains, (data) =>
-        if data.type is 'server'
-          for domain in data.domains
-            @log if @sockets[domain] then "updating domain #{domain}" else "new domain #{domain}"
-            @sockets[domain] = socket 
-        else # if data.type is 'client'
-          for domain in data.domains
-            if @sockets[domain]
-              ID = (Math.random() + '').replace '0.', ''
-              @log "pairing rpc.#{domain} with #{ID}"
-              socket.on "rpc.#{domain}", (msg, ack_cb) =>
-                @sockets[domain].emit "#{ID}", msg, -> ack_cb.apply @, arguments
-              @sockets[domain].on "#{ID}", (msg, ack_cb) ->
-                socket.emit "rpc.#{domain}", msg, -> ack_cb.apply @, arguments
-
-              @sockets[domain].emit "new.#{domain}", ID
-            else
-              @log error = "error: domain #{domain} is not available"
-              socket.on "rpc.#{domain}", (msg, ack_cb) => ack_cb null, error
+    @log "Starting Proxy on #{port}"
+    nsp = proxy.of '/proxy'
+    nsp.on 'connection', (server) => 
+      @log 'NEW connection'
+      server.emit 'handshake', (Object.keys @domains), (data) =>
+        if @domains[data.domain] then @log "warning: domain #{data.domain} already registered"
+        else
+          @log "registering domain: #{data.domain}"
+          domain = proxy.of "/#{data.domain}"
+          @domains[data.domain] = domain
+          server.on 'disconnect', => delete @domains[data.domain]
+          domain.on 'connection', (client) =>
+            ID = (Math.random() + '').replace '0.', ''
+            @log "new connection #{ID} for #{data.domain}"
+            client.on 'rpc', (msg, ack_cb) -> server.emit  "#{ID}", msg, (msg, err) -> ack_cb msg, err
+            server.on  "#{ID}", (msg, ack_cb) -> client.emit 'rpc', msg, (msg, err) -> ack_cb msg, err
+            server.emit 'new', ID
 
   log: (text) -> console.log text
 

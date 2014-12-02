@@ -10,74 +10,44 @@
 
   io = require('socket.io');
 
-  Proxy = (function() {
-    Proxy.prototype.count = 0;
-
+  exports.Proxy = Proxy = (function() {
     function Proxy(port) {
-      var proxy;
+      var nsp, proxy;
       this.port = port;
+      this.domains = [];
       proxy = io(this.port);
-      this.log("Starting Proxy on " + this.port);
-      this.sockets = [];
-      proxy.on('connection', (function(_this) {
-        return function(socket) {
-          var domain, domains;
-          _this.log("NEW connection " + (++_this.count));
-          socket.on('disconnect', function(msg) {
-            var domain, _results;
-            _results = [];
-            for (domain in _this.sockets) {
-              if (_this.sockets[domain] === socket) {
-                _this.log("removing domain " + domain);
-                _results.push(delete _this.sockets[domain]);
-              } else {
-                _results.push(void 0);
-              }
-            }
-            return _results;
-          });
-          domains = [];
-          for (domain in _this.sockets) {
-            domains.push(domain);
-          }
-          return socket.emit('handshake', domains, function(data) {
-            var ID, error, _i, _j, _len, _len1, _ref, _ref1, _results, _results1;
-            if (data.type === 'server') {
-              _ref = data.domains;
-              _results = [];
-              for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-                domain = _ref[_i];
-                _this.log(_this.sockets[domain] ? "updating domain " + domain : "new domain " + domain);
-                _results.push(_this.sockets[domain] = socket);
-              }
-              return _results;
+      this.log("Starting Proxy on " + port);
+      nsp = proxy.of('/proxy');
+      nsp.on('connection', (function(_this) {
+        return function(server) {
+          _this.log('NEW connection');
+          return server.emit('handshake', Object.keys(_this.domains), function(data) {
+            var domain;
+            if (_this.domains[data.domain]) {
+              return _this.log("warning: domain " + data.domain + " already registered");
             } else {
-              _ref1 = data.domains;
-              _results1 = [];
-              for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-                domain = _ref1[_j];
-                if (_this.sockets[domain]) {
-                  ID = (Math.random() + '').replace('0.', '');
-                  _this.log("pairing rpc." + domain + " with " + ID);
-                  socket.on("rpc." + domain, function(msg, ack_cb) {
-                    return _this.sockets[domain].emit("" + ID, msg, function() {
-                      return ack_cb.apply(this, arguments);
-                    });
+              _this.log("registering domain: " + data.domain);
+              domain = proxy.of("/" + data.domain);
+              _this.domains[data.domain] = domain;
+              server.on('disconnect', function() {
+                return delete _this.domains[data.domain];
+              });
+              return domain.on('connection', function(client) {
+                var ID;
+                ID = (Math.random() + '').replace('0.', '');
+                _this.log("new connection " + ID + " for " + data.domain);
+                client.on('rpc', function(msg, ack_cb) {
+                  return server.emit("" + ID, msg, function(msg, err) {
+                    return ack_cb(msg, err);
                   });
-                  _this.sockets[domain].on("" + ID, function(msg, ack_cb) {
-                    return socket.emit("rpc." + domain, msg, function() {
-                      return ack_cb.apply(this, arguments);
-                    });
+                });
+                server.on("" + ID, function(msg, ack_cb) {
+                  return client.emit('rpc', msg, function(msg, err) {
+                    return ack_cb(msg, err);
                   });
-                  _results1.push(_this.sockets[domain].emit("new." + domain, ID));
-                } else {
-                  _this.log(error = "error: domain " + domain + " is not available");
-                  _results1.push(socket.on("rpc." + domain, function(msg, ack_cb) {
-                    return ack_cb(null, error);
-                  }));
-                }
-              }
-              return _results1;
+                });
+                return server.emit('new', ID);
+              });
             }
           });
         };

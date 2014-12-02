@@ -3,7 +3,7 @@ proxy
 
 Proxy for avs-rpc.
 
-The proxy connects clients and servers through ioRpc (cf. [avs-rpc](https://www.npmjs.org/package/avs-rpc)). This allows servers to be distributed on various machines without clients having to know their location. It is usefull when servers are behind routers (NAT).
+The proxy connects clients and servers through ioRpc (cf. [avs-rpc](https://www.npmjs.org/package/avs-rpc)). This allows servers to be distributed on various machines without clients having to know their location. It is particularly useful when servers are behind routers (NAT).
 
 Clients connect to the proxy and use the services published by the servers.
 
@@ -30,7 +30,7 @@ where 4241 is the server listening port
 
 ## proxy server ##
 
-A proxy server publishes one or more domains (services). For each domain, a rpc object will be instantiated upon client connection. This rpc object implement methods so they are available to the client through the avs-rpc mechanism. 
+A proxy server publishes one domain (service). For this domain, a rpc object will be instantiated upon client connection. This rpc object implements the methods that need to be available to the client through the avs-rpc mechanism. 
 
 ```js
 proxy = require('avs-proxy');
@@ -39,20 +39,22 @@ function getUserProfile(name) { return {name:'test', age:32}; }
 var local = {};
 local.getUserProfile = getUserProfile;
 
-server = new proxy.Server("http://localhost:4241", ['dom1', 'dom2'], function(domain, rpc) {
+server = new proxy.Server("http://localhost:4241", 'mydomain', function(rpc, err) {
     rpc.implement(local); 
 }
 ```
 
+An error is returned if the domain is already registered on the proxy.
+
 ## proxy client ##
 
-A proxy client connects to the proxy and indicates the domains it needs to subscribe to. Once connected, the client can use any of the remote methods published in the domains subscribed.
+A proxy client connects to the proxy indicating via the URL the domain it needs to subscribe to. Once connected, the client can use any of the remote methods published in the domain subscribed.
 
 ```js
 proxy = require('avs-proxy');
 
-rpc = new proxy.Client("http://localhost:4241", 'dom1');
-remote = rpc.remote('dom1', 'getUserProfile');
+rpc = new proxy.Client("http://localhost:4241/mydomain");
+remote = rpc.remote('getUserProfile');
 ....
 remote.getUserProfile(function(msg, err) {
       if (err) { console.log(err); } 
@@ -67,7 +69,7 @@ The UMD bundle name of the minified library is *proxy*. The example below shows 
 Example:
 
 ```js
-rpc = new proxy.Client('http://localhost:4241', 'dom1');
+rpc = new proxy.Client('http://localhost:4241/mydomain');
 ...
 ```
 
