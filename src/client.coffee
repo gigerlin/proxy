@@ -1,6 +1,8 @@
 Client = require('avs-proxy').Client
 
-cli = new Client "http://localhost:#{process.argv[2]}/ns", (rpc) -> 
+new Client "http://localhost:#{process.argv[2]}/ns", (rpc, err) -> 
+  if err then console.log err 
+  else
     console.log "cli connected!"
     rpc.implement new Test
     remotec = rpc.remote 'getAge'

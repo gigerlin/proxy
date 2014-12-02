@@ -39,9 +39,9 @@ function getUserProfile(name) { return {name:'test', age:32}; }
 var local = {};
 local.getUserProfile = getUserProfile;
 
-server = new proxy.Server("http://localhost:4241", 'mydomain', function(rpc, err) {
+new proxy.Server("http://localhost:4241", 'mydomain', function(rpc, err) {
     rpc.implement(local); 
-}
+});
 ```
 
 An error is returned if the domain is already registered on the proxy.
@@ -53,13 +53,16 @@ A proxy client connects to the proxy indicating via the URL the domain it needs 
 ```js
 proxy = require('avs-proxy');
 
-rpc = new proxy.Client("http://localhost:4241/mydomain");
-remote = rpc.remote('getUserProfile');
-....
-remote.getUserProfile(function(msg, err) {
-      if (err) { console.log(err); } 
-      else { console.log("getUserProfile: " + msg.age); }
-    });
+new proxy.Client("http://localhost:4241/mydomain", function(rpc, err) {
+    if (err) { console.log(err); } 
+    else {
+        var remote = rpc.remote('getUserProfile');
+        remote.getUserProfile('test', function(msg, err) {
+            if (err) { console.log(err); } 
+            else { console.log("getUserProfile: " + msg.age); }
+        });
+    }
+});
 ```
 
 ### Browser ###

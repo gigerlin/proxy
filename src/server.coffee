@@ -1,4 +1,4 @@
-Server = require('avs-Proxy').Server
+Server = require('avs-proxy').Server
 
 srv = new Server "http://localhost:#{process.argv[2]}", 'ns', (rpc, err) ->
   if err then console.log err

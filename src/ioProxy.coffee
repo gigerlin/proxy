@@ -6,9 +6,13 @@
 io_client = require 'socket.io-client'
 avsRpc = require 'avs-rpc'
 
+connect = (url, cb) ->
+  socket = io_client url
+  socket.on 'connect_error', (msg) -> cb null, msg
+
 exports.Server = class Server
   constructor: (url, service, cb) ->
-    socket = io_client "#{url}/proxy"
+    socket = connect "#{url}/proxy", cb
     socket.on 'handshake', (domains, ack_cb) ->
       console.log "proxy domains: #{domains}"
       if service in domains
@@ -21,5 +25,5 @@ exports.Server = class Server
 
 exports.Client = class Client 
   constructor: (url, cb) ->
-    socket = io_client url
+    socket = connect url, cb
     socket.on 'connect', -> cb new avsRpc.ioRpc socket

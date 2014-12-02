@@ -6,17 +6,25 @@
  */
 
 (function() {
-  var Client, Server, avsRpc, io_client,
+  var Client, Server, avsRpc, connect, io_client,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   io_client = require('socket.io-client');
 
   avsRpc = require('avs-rpc');
 
+  connect = function(url, cb) {
+    var socket;
+    socket = io_client(url);
+    return socket.on('connect_error', function(msg) {
+      return cb(null, msg);
+    });
+  };
+
   exports.Server = Server = (function() {
     function Server(url, service, cb) {
       var socket;
-      socket = io_client("" + url + "/proxy");
+      socket = connect("" + url + "/proxy", cb);
       socket.on('handshake', function(domains, ack_cb) {
         var err;
         console.log("proxy domains: " + domains);
@@ -42,7 +50,7 @@
   exports.Client = Client = (function() {
     function Client(url, cb) {
       var socket;
-      socket = io_client(url);
+      socket = connect(url, cb);
       socket.on('connect', function() {
         return cb(new avsRpc.ioRpc(socket));
       });

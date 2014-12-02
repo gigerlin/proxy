@@ -4,26 +4,19 @@
 
   Client = require('avs-proxy').Client;
 
-  new Client("http://localhost:" + process.argv[2] + "/ns", function(rpc) {
+  new Client("http://localhost:" + process.argv[2] + "/ns", function(rpc, err) {
     var remotec;
-    console.log("client connected!");
-    rpc.implement(new Test);
-    remotec = rpc.remote('getAge');
-    return remotec.getAge(function(rst, err) {
-      return console.log(err ? err : "getAge: " + rst);
-    });
+    if (err) {
+      return console.log(err);
+    } else {
+      console.log("cli connected!");
+      rpc.implement(new Test);
+      remotec = rpc.remote('getAge');
+      return remotec.getAge(function(rst, err) {
+        return console.log(err ? err : "getAge: " + rst);
+      });
+    }
   });
-
-  new Client("http://localhost:" + process.argv[2] + "/ns2", function(rpc) {
-    var remotec;
-    console.log("client2 connected!");
-    rpc.implement(new Test);
-    remotec = rpc.remote('getAge');
-    return remotec.getAge(function(rst, err) {
-      return console.log(err ? err : "getAge: " + rst);
-    });
-  });
-
 
   Test = (function() {
     function Test() {}

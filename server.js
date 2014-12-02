@@ -2,7 +2,7 @@
 (function() {
   var Server, User, srv;
 
-  Server = require('avs-Proxy').Server;
+  Server = require('avs-proxy').Server;
 
   srv = new Server("http://localhost:" + process.argv[2], 'ns', function(rpc, err) {
     var remote;
