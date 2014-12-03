@@ -15,7 +15,9 @@
       var nsp, proxy;
       this.port = port;
       this.domains = [];
-      proxy = io(this.port);
+      proxy = io(this.port, {
+        transports: ['websocket', 'polling']
+      });
       this.log("Starting Proxy on " + port);
       nsp = proxy.of('/proxy');
       nsp.on('connection', (function(_this) {

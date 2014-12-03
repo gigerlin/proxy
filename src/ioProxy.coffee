@@ -3,7 +3,7 @@
   Copyright 2014. All rights reserved.
 ###
 
-io_client = require 'socket.io-client'
+exports.io_client = io_client = require 'socket.io-client'
 avsRpc = require 'avs-rpc'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"

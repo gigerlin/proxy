@@ -8,7 +8,7 @@ io = require 'socket.io'
 exports.Proxy = class Proxy
   constructor: (@port) ->
     @domains = []
-    proxy = io @port
+    proxy = io @port, transports:['websocket', 'polling']
     @log "Starting Proxy on #{port}"
     nsp = proxy.of '/proxy'
     nsp.on 'connection', (server) => 

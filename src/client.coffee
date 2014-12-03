@@ -1,6 +1,6 @@
 Client = require('avs-proxy').Client
 
-new Client "https://proxy.avansonic.com/ns", (rpc, err) -> 
+new Client "http://localhost:#{process.argv[2]}/ns", (rpc, err) -> 
   if err then console.log err 
   else
     console.log "cli connected!"
