@@ -13,9 +13,13 @@
 
   avsRpc = require('avs-rpc');
 
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
   connect = function(url, cb) {
     var socket;
-    socket = io_client(url);
+    socket = io_client(url, {
+      transports: ['websocket', 'polling']
+    });
     return socket.on('connect_error', function(msg) {
       return cb(null, msg);
     });

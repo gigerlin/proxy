@@ -4,7 +4,7 @@
 
   Client = require('avs-proxy').Client;
 
-  new Client("http://localhost:" + process.argv[2] + "/ns", function(rpc, err) {
+  new Client("https://proxy.avansonic.com/ns", function(rpc, err) {
     var remotec;
     if (err) {
       return console.log(err);

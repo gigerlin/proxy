@@ -72,7 +72,7 @@ The UMD bundle name of the minified library is *proxy*. The example below shows 
 Example:
 
 ```js
-rpc = new proxy.Client('http://localhost:4241/mydomain');
+new proxy.Client('http://localhost:4241/mydomain', function(rpc, err) { ... 
 ...
 ```
 
