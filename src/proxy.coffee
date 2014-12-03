@@ -19,7 +19,9 @@ exports.Proxy = class Proxy
           @log "registering domain: #{data.domain}"
           domain = proxy.of "/#{data.domain}"
           @domains[data.domain] = domain
-          server.on 'disconnect', => delete @domains[data.domain]
+          server.on 'disconnect', =>
+            console.log "removing domain: #{data.domain}" 
+            delete @domains[data.domain]
           domain.on 'connection', (client) =>
             ID = (Math.random() + '').replace '0.', ''
             @log "new connection #{ID} for #{data.domain}"

@@ -30,6 +30,7 @@
               domain = proxy.of("/" + data.domain);
               _this.domains[data.domain] = domain;
               server.on('disconnect', function() {
+                console.log("removing domain: " + data.domain);
                 return delete _this.domains[data.domain];
               });
               return domain.on('connection', function(client) {
