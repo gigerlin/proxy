@@ -12,4 +12,11 @@ srv = new Server "http://localhost:#{process.argv[2]}", 'ns', (rpc, err) ->
 
 class User
   constructor: (@name, @age) ->
-  getAge: -> @age
+  getAge: (a1, a2) -> 
+    console.log "a1:#{a1}"
+    console.log "a2:#{a2}"
+    @age
+
+io_client = require 'socket.io-client'
+inf = io_client "http://localhost:#{process.argv[2]}/proxy/info", transports:['websocket', 'polling']
+inf.on 'info', (domains) -> console.log "domains: #{domains}"
