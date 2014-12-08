@@ -9,7 +9,7 @@
     if (err) {
       return console.log(err);
     } else {
-      console.log("cli connected!");
+      console.log("client connected!");
       rpc.implement(new Test);
       remotec = rpc.remote('getAge');
       return remotec.getAge(function(rst, err) {

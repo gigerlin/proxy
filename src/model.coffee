@@ -6,30 +6,34 @@
 json = require 'circular-json'
 io_client = require 'socket.io-client'
 
+verbose = true
+
 class Emitter extends require('events').EventEmitter
-  log: (text) -> console.log if text.length < 128 then text else text.substring(0, 127) + ' ...'
+  log: (text) -> if verbose then console.log if text.length < 128 then text else text.substring(0, 127) + ' ...'
 
 class Wrapper
   constructor: (@socket, @tag = 'rpc') ->
   emit: (tag, msg, ack_cb) -> @socket.emit tag, msg, (rst, err) -> ack_cb rst, err
+  on: (event, cb) -> @socket.on event, cb()
 
 exports.Remote = class Remote
   constructor: (socket, methods...) ->
-    count = 0
-    uid = (Math.random() + '').substring 2, 8
-    tag = socket.tag or 'rpc'
-    ( (method) => @[method] = -> 
-      args = Array.prototype.slice.call arguments # transform arguments into array
-      cb = args.pop() if typeof args[args.length-1] is 'function' 
-      msg = method:method, args:args, id:"#{uid}-#{++count}"
-      console.log "rpc #{msg.id}: out rpc #{message = json.stringify msg}"
-      if socket then socket.emit tag, message, (rst, err) -> cb rst, err if cb 
-    ) method for method in methods
+    if socket
+      count = 0
+      uid = (Math.random() + '').substring 2, 8
+      tag = socket.tag or 'rpc'
+      ( (method) => @[method] = -> 
+        args = Array.prototype.slice.call arguments # transform arguments into array
+        cb = args.pop() if typeof args[args.length-1] is 'function' 
+        message = json.stringify msg = method:method, args:args, id:"#{uid}-#{++count}"
+        if verbose then console.log "rpc #{msg.id}: out rpc #{message}"
+        socket.emit tag, message, (rst, err) -> cb rst, err if cb 
+      ) method for method in methods
 
 exports.Local = class Local extends Emitter
   use: (@impl) -> @
-  setAsync: (@async...) -> 
-  remote: (methods...) -> new Remote @socket, methods
+  remote: (methods...) -> new Remote @socket, methods...
+  setSync: (methods...) -> @sync = methods
 
   constructor: (socket, tag = 'rpc') ->
     if socket 
@@ -41,9 +45,12 @@ exports.Local = class Local extends Emitter
         if @impl and @impl[msg.method]
           try
             args = msg.args or []
-            args.push => ack_cb.apply @, arguments
-            @log "rpc #{msg.id}: executing local #{msg.method}"
-            if @async and msg.method in @async then @impl[msg.method] args... else ack_cb @impl[msg.method] args...
+            if @sync then async = true unless msg.method in @sync
+            # try to determine asynchronism from the expected number of arguments
+            else if args.length < @impl[msg.method].length then async = true # risk is caller forgets a parameter or signature is like m(p1, p2=3)
+            if async then args.push => ack_cb.apply @, arguments
+            @log "rpc #{msg.id}: executing #{if async then 'async ' else ''}#{msg.method}"
+            if async then @impl[msg.method] args... else ack_cb @impl[msg.method] args...
           catch e
             @log args = "error in #{msg.method}: #{e}"
             ack_cb null, args
@@ -53,28 +60,24 @@ exports.Local = class Local extends Emitter
 
 exports.Server = class Server extends Emitter
   constructor: (url, Class) ->
+    methods = []
+    methods.push method for method of Class.prototype when typeof Class.prototype[method] is 'function' and method.charAt(0) isnt '_' # discard private methods
+
     socket = io_client "#{url}/proxy", transports:['websocket', 'polling']
-    socket.on 'connect_error', (msg) => @emit 'error', msg
-    socket.on 'handshake', (classes, ack_cb) =>
-      @log "proxy classes available: #{classes}"
-      service = Class.name
-      if service in classes
-        @log err = "error: class #{service} already registered"
-        socket.disconnect()
-        @emit 'error', err
-      else
-        methods = []
-        methods.push method for method of Class.prototype when typeof Class.prototype[method] is 'function' and method.charAt(0) isnt '_' # discard private methods
-        @log "#{service} methods: #{methods}"
-        ack_cb Class:service, methods:methods
-        socket.on 'new', (ID) => @emit 'new', new Local socket, ID
+    socket.on 'connect_error', (err) => @emit 'error', err
+    socket.on 'connect', => 
+      socket.emit 'register', { Class:Class.name, methods:methods }, (err) =>
+        unless err then socket.on 'new', (ID, dom) => @emit 'new', new Local socket, ID if dom is Class.name
+        else
+          @log err 
+          socket.disconnect()
+          @emit 'error', err
 
 exports.RemoteClass = class RemoteClass extends Emitter
+  export: (impl) -> new Local(@socket).use impl
   constructor: (url) ->
     @socket = io_client url, transports:['websocket', 'polling']
-    @socket.on 'interface', (methods) => 
+    @socket.on 'connect_error', (err) => @emit 'error', err
+    @socket.on 'handshake', (methods) => 
       @log "remote methods: #{methods}"
       @emit 'connect', new Remote @socket, methods...
-  export: (impl) -> 
-    local = new Local @socket
-    local.use impl

@@ -8,13 +8,25 @@ class User
     #console.log "a2:#{a2}"
     @age
   log: (text) -> console.log text  
+  async: (t, cb) -> cb 33
 
-UserServer = new (require './model').Server "http://localhost:8787", User
+class Account
+  total: -> 46
+
+
+UserServer = new (require './model').Server "http://localhost:#{process.argv[2]}", User
 UserServer.on 'error', (err) -> console.log err
 UserServer.on 'new', (local) ->
-    local.use new User 'test', 564
-    r = local.remote 'echo'
-    setTimeout (->
-      r.echo 34, (rst, err) -> console.log if err then err else "echo: #{rst}"
-    ), 2000  
+  local.use new User 'test', 564
+  local.setSync 'getAge'
+  r = local.remote 'echo'
+  setTimeout (->
+    r.echo 34, (rst, err) -> console.log if err then err else "echo: #{rst}"
+  ), 2000  
+
+acc = new Account
+AccountServer = new (require './model').Server "http://localhost:#{process.argv[2]}", Account
+AccountServer.on 'error', (err) -> console.log err
+AccountServer.on 'new', (local) ->
+  local.use acc
 
